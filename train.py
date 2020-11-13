@@ -118,6 +118,8 @@ while epoch < opt.epoch_max :
 
             network_G.eval()
 
+            gen = network_G(inp)
+
             snap_inp = np.hstack([inp[n].detach().cpu().numpy().squeeze(0) for n in range(4)])
             snap_tar = np.hstack([tar[n].detach().cpu().numpy().squeeze(0) for n in range(4)])
             snap_gen = np.hstack([gen[n].detach().cpu().numpy().squeeze(0) for n in range(4)])
