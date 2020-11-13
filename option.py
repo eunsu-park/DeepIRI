@@ -18,9 +18,20 @@ class BaseOption():
         self.parser.add_argument('--ch_inp', type=int, default=1)
         self.parser.add_argument('--ch_tar', type=int, default=1)
 
-        self.parser.add_argument('--nb_D', type=int, default=3)
-        self.parser.add_argument('--type_norm', type=str, default='none',
+        self.parser.add_argument('--type_gan', type=str, default='lsgan') ## 'gan', 'lsgan'
+
+        self.parser.add_argument('--type_norm', type=str, default='instance',
                                  help='[none, batch, instance]')
+
+        self.parser.add_argument('--nb_D', type=int, default=3)
+        self.parser.add_argument('--nb_layer', type=int, default=3)
+        self.parser.add_argument('--nb_feat_init_D', type=int, default=64)
+        self.parser.add_argument('--use_sigmoid', type=bool, default=False)
+
+        self.parser.add_argument('--nb_feat_init_G', type=int, default=64)
+        self.parser.add_argument('--nb_down', type=int, default=2)
+        self.parser.add_argument('--nb_block', type=int, default=9)
+        self.parser.add_argument('--use_tanh', type=bool, default=False)
 
         self.parser.add_argument('--root_data', type=str, default='/userhome/park_e/datasets/tec')
         self.parser.add_argument('--root_save', type=str, default='/userhome/park_e/results/tec')
