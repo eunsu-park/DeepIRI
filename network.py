@@ -46,8 +46,7 @@ class ResidualBlock(nn.Module):
 
 
 class ResidualGenerator(nn.Module):
-    def __init__(self, opt, nb_feature_init=64, nb_down=2, nb_block=9,
-                 padding_mode='reflect', use_tanh=False):
+    def __init__(self, opt):
         super(ResidualGenerator, self).__init__()
 
         self.opt = opt
