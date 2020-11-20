@@ -59,9 +59,7 @@ class ResidualGenerator(nn.Module):
         nb_feat = self.opt.nb_feat_init_G
         nb_down = self.opt.nb_down
         nb_block = self.opt.nb_block
-        use_tanh = self.opt.use_tanh
-        type_norm = self.opt.type_norm
-        norm = get_norm_layer(type_norm)
+        norm = get_norm_layer(self.opt.type_norm)
 
         block = []
         block += [nn.Conv2d(ch_inp, nb_feat, kernel_size=7,
@@ -86,7 +84,7 @@ class ResidualGenerator(nn.Module):
         block += [nn.Conv2d(nb_feat, ch_tar, kernel_size=7,
                             stride=1, padding=3, padding_mode='reflect')]
 
-        if use_tanh :
+        if self.opt.use_tanh :
             block += [nn.Tanh()]
             
         self.block = nn.Sequential(*block)
@@ -107,9 +105,8 @@ class PixelDiscriminator(nn.Module):
         ch_inp = self.opt.ch_inp
         ch_tar = self.opt.ch_tar
         nb_feat = self.opt.nb_feat_init_D
-        use_sigmoid = self.opt.use_sigmoid
-        type_norm = self.opt.type_norm
-        norm = get_norm_layer(type_norm)
+        norm = get_norm_layer(self.opt.type_norm)
+
         block = [nn.Conv2d(ch_inp+ch_tar, nb_feat, kernel_size=1, stride=1, padding=0),
                  nn.LeakyReLU(0.2),
                  nn.Conv2d(nb_feat, nb_feat*2, kernel_size=1, stride=1, padding=0),
@@ -134,10 +131,9 @@ class PatchDiscriminator(nn.Module):
         ch_inp = self.opt.ch_inp
         ch_tar = self.opt.ch_tar
         nb_layer = self.opt.nb_layer
-        use_sigmoid = self.opt.use_sigmoid
         nb_feat = self.opt.nb_feat_init_D
-        type_norm = self.opt.type_norm
-        norm = get_norm_layer(type_norm)
+        norm = get_norm_layer(self.opt.type_norm)
+        
         blocks = []
         block = [nn.Conv2d(ch_inp+ch_tar, nb_feat, kernel_size=4,
                            stride=2, padding=1),
@@ -156,7 +152,7 @@ class PatchDiscriminator(nn.Module):
         nb_feat *= 2
         block = [nn.Conv2d(nb_feat, 1, kernel_size=4,
                            stride=1, padding=1)]
-        if use_sigmoid :
+        if self.opt.use_sigmoid :
             block += [nn.Sigmoid()]
         blocks.append(block)
         self.nb_blocks = len(blocks)
