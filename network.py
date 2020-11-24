@@ -35,7 +35,7 @@ class ResidualBlock(nn.Module):
     def build(self, nb_feat, norm):
         block = [nn.ReflectionPad2d(1),
                  nn.Conv2d(nb_feat, nb_feat, kernel_size=3, stride=1, padding=0),
-                 norm(nb_feat), nn.ReLU(True),
+                 norm(nb_feat), nn.ReLU(),
                  nn.ReflectionPad2d(1),
                  nn.Conv2d(nb_feat, nb_feat, kernel_size=3, stride=1, padding=0),
                  norm(nb_feat)]
@@ -97,12 +97,10 @@ class PixelDiscriminator(nn.Module):
         print(self)
 
     def build(self):
-        ch_inp = self.opt.ch_inp
-        ch_tar = self.opt.ch_tar
         nb_feat = self.opt.nb_feat_init_D
         norm = get_norm_layer(self.opt.type_norm)
 
-        block = [nn.Conv2d(ch_inp+ch_tar, nb_feat, kernel_size=1, stride=1, padding=0),
+        block = [nn.Conv2d(self.opt.ch_inp+self.opt.ch_tar, nb_feat, kernel_size=1, stride=1, padding=0),
                  nn.LeakyReLU(0.2),
                  nn.Conv2d(nb_feat, nb_feat*2, kernel_size=1, stride=1, padding=0),
                  norm(nb_feat*2), nn.LeakyReLU(0.2),
@@ -123,33 +121,30 @@ class PatchDiscriminator(nn.Module):
         print(self)
 
     def build(self):
-        ch_inp = self.opt.ch_inp
-        ch_tar = self.opt.ch_tar
-        nb_layer = self.opt.nb_layer
         nb_feat = self.opt.nb_feat_init_D
         norm = get_norm_layer(self.opt.type_norm)
         
         blocks = []
-        block = [nn.Conv2d(ch_inp+ch_tar, nb_feat, kernel_size=4,
-                           stride=2, padding=1),
+        block = [nn.Conv2d(self.opt.ch_inp+self.opt.ch_tar, nb_feat, kernel_size=4, stride=2, padding=1),
                  nn.LeakyReLU(0.2)]
         blocks.append(block)
-        for n in range(nb_layer - 1):
-            block = [nn.Conv2d(nb_feat, nb_feat*2, kernel_size=4,
-                               stride=2, padding=1),
+
+        for n in range(1, self.opt.nb_layer):
+            block = [nn.Conv2d(nb_feat, nb_feat*2, kernel_size=4, stride=2, padding=1),
                      norm(nb_feat*2), nn.LeakyReLU(0.2)]
             blocks.append(block)
             nb_feat *= 2
-        block = [nn.Conv2d(nb_feat, nb_feat*2, kernel_size=4,
-                           stride=1, padding=1),
+
+        block = [nn.Conv2d(nb_feat, nb_feat*2, kernel_size=4, stride=1, padding=1),
                  norm(nb_feat*2), nn.LeakyReLU(0.2)]
         blocks.append(block)
         nb_feat *= 2
-        block = [nn.Conv2d(nb_feat, 1, kernel_size=4,
-                           stride=1, padding=1)]
+
+        block = [nn.Conv2d(nb_feat, 1, kernel_size=4, stride=1, padding=1)]
         if self.opt.use_sigmoid :
             block += [nn.Sigmoid()]
         blocks.append(block)
+
         self.nb_blocks = len(blocks)
         for i in range(self.nb_blocks):
             setattr(self, 'block_%d'%(i), nn.Sequential(*blocks[i]))
@@ -168,13 +163,12 @@ class MultiPatchDiscriminator(nn.Module):
         self.nb_D = opt.nb_D
         for n in range(opt.nb_D):
             setattr(self, 'Discriminator_%d'%(n), PatchDiscriminator(opt))
-        print(self)
-        print(sum(p.numel() for p in self.parameters() if p.requires_grad))
+        self.downsample = nn.AvgPool2d(kernel_size=3, padding=1, stride=2)
     def forward(self, inp):
         result = []
         for n in range(self.nb_D):
             if n != 0 :
-                inp = nn.AvgPool2d(kernel_size=3, padding=1, stride=2) (inp)
+                inp = self.downsample(inp)
             result.append(getattr(self, 'Discriminator_%d'%(n))(inp))
         return result
 
