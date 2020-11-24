@@ -33,11 +33,11 @@ class ResidualBlock(nn.Module):
         self.build(nb_feat, norm)
 
     def build(self, nb_feat, norm):
-        block = [nn.Conv2d(nb_feat, nb_feat, kernel_size=3, stride=1,
-                           padding=1, padding_mode='reflect'),
-                 norm(nb_feat), nn.ReLU(),
-                 nn.Conv2d(nb_feat, nb_feat, kernel_size=3, stride=1,
-                           padding=1, padding_mode='reflect'),
+        block = [nn.ReflectionPad2d(1),
+                 nn.Conv2d(nb_feat, nb_feat, kernel_size=3, stride=1, padding=0),
+                 norm(nb_feat), nn.ReLU(True),
+                 nn.ReflectionPad2d(1),
+                 nn.Conv2d(nb_feat, nb_feat, kernel_size=3, stride=1, padding=0),
                  norm(nb_feat)]
         self.block = nn.Sequential(*block)
 
@@ -54,35 +54,30 @@ class ResidualGenerator(nn.Module):
         print(self)
 
     def build(self):
-        ch_inp = self.opt.ch_inp
-        ch_tar = self.opt.ch_tar
         nb_feat = self.opt.nb_feat_init_G
-        nb_down = self.opt.nb_down
-        nb_block = self.opt.nb_block
         norm = get_norm_layer(self.opt.type_norm)
+        act = nn.ReLU()
 
         block = []
-        block += [nn.Conv2d(ch_inp, nb_feat, kernel_size=7,
-                            stride=1, padding=3, padding_mode='reflect'),
-                  norm(nb_feat), nn.ReLU()]
+        block += [nn.ReflectionPad2d(3),
+                  nn.Conv2d(self.opt.ch_inp, nb_feat, kernel_size=7, stride=1, padding=0),
+                  norm(nb_feat), act]
 
-        for i in range(nb_down):
-            block += [nn.Conv2d(nb_feat, nb_feat*2, kernel_size=3,
-                                stride=2, padding=1),
-                      norm(nb_feat*2), nn.ReLU()]
+        for i in range(self.opt.nb_down):
+            block += [nn.Conv2d(nb_feat, nb_feat*2, kernel_size=3, stride=2, padding=1),
+                      norm(nb_feat*2), act]
             nb_feat *= 2
 
-        for j in range(nb_block):
+        for j in range(self.opt.nb_block):
             block += [ResidualBlock(nb_feat, norm)]
 
-        for k in range(nb_down):
-            block += [nn.ConvTranspose2d(nb_feat, nb_feat//2, kernel_size=3,
-                                         stride=2, padding=1, output_padding=1),
-                      norm(nb_feat//2), nn.ReLU()]
+        for k in range(self.opt.nb_down):
+            block += [nn.ConvTranspose2d(nb_feat, nb_feat//2, kernel_size=3, stride=2, padding=1, output_padding=1),
+                      norm(nb_feat//2), act]
             nb_feat //=2
 
-        block += [nn.Conv2d(nb_feat, ch_tar, kernel_size=7,
-                            stride=1, padding=3, padding_mode='reflect')]
+        block += [nn.ReflectionPad2d(3),
+                  nn.Conv2d(nb_feat, self.opt.ch_tar, kernel_size=7, stride=1, padding=0)]
 
         if self.opt.use_tanh :
             block += [nn.Tanh()]
